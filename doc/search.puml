@@ -1,0 +1,17 @@
+@startuml
+start
+:搜索文档 **Search**;
+:使用 **Keyword** 生成搜索关键词 **words**;
+:定义文件ID列表;
+repeat
+  repeat
+    if (查找 **word** 是否有索引?) then (有)
+      :对应文件加入文件ID列表;
+    else (没有)
+      :创建索引;
+    endif
+  repeat while (遍历: words)
+repeat while (遍历: 标题，摘要，内容)
+:返回文件ID列表;
+stop
+@enduml

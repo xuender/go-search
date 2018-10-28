@@ -1,0 +1,39 @@
+@startuml
+start
+:**keyword** 寻找关键词;
+partition 生成可能的关键词列表 {
+  :初始化 **words**;
+  :**Split** 分解文本 **str** 成 **ws**;
+  repeat
+    if (**w** 分词方式?) then (自然分词)
+      :加入 **words**;
+    else (中文、日文等)
+      :分组 **Group**;
+      repeat
+        :加入 **words**;
+      repeat while (遍历分组后的结果)
+    endif
+  repeat while (遍历 **ws**)
+}
+partition 生成关键词列表 {
+  :定义 **keywords** 关键词列表;
+  repeat
+    if (**word** 是否有索引?) then (有索引)
+      :是关键词，加入 **keywords**;
+    else (没有索引)
+      partition 创建索引 {
+        repeat
+          if (**doc** 是否包含 **word**?) then (包含)
+            :创建索引;
+          endif
+        repeat while (遍历所有doc)
+      }
+      if (是否创建过索引?) then (创建过)
+        :是关键词，加入 **keywords**;
+      endif
+    endif
+  repeat while (遍历 **words**)
+  :返回 **keywords** 关键词列表;
+}
+stop
+@enduml

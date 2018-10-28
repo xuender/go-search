@@ -1,0 +1,60 @@
+@startuml
+class Engine {
+  搜索引擎
+  ..
+  - db DB 数据库
+  --
+  + Close() 关闭引擎
+  + Put(Document) 更新文档
+  + Search(str string) []Document 搜索文档
+  - searchID(str string) []utils.ID 搜索文档ID
+  - index(doc *Document, id utils.ID) 创建索引
+}
+
+class Document {
+  文档
+  ..
+  + Key []byte 主键
+  + Title string 标题
+  + Summary string 摘要
+  + Content string 内容
+  .. 以下索引是删除索引时使用的 ..
+  + TitleIndex   *Results  标题索引
+  + SummaryIndex *Results  摘要索引
+  + ContentIndex *Results  内容索引
+  --
+  - dbKey() []byte 文档Key
+}
+
+class Index {
+  索引
+  ..
+  - docs map[utils.ID]int 文档
+}
+
+
+interface DB {
+  数据库接口
+  ..
+  + Close() error 数据库关闭
+  + Get(key []byte) ([]byte, error) 获取
+  + Put(key, value []byte) error 写入
+  + Has(key []byte) (bool, error) 是否包含
+  + Delete(key []byte) error 删除
+  + Iterator(prefix []byte, f func(key, value []byte)) error 迭代数据
+}
+class Leveldb {
+  Leveldb数据库
+  ..
+  - db *leveldb.DB
+}
+class Redis {
+  redis数据库，尚未实现
+}
+
+
+Engine *-- DB
+DB <|-- Leveldb
+DB <|-- Redis
+
+@enduml
