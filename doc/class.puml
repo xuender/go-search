@@ -7,8 +7,8 @@ class Engine {
   + Close() 关闭引擎
   + Put(Document) 更新文档
   + Search(str string) []Document 搜索文档
+  + SearchKey(str string) [][]byte 搜索文档Key
   - searchID(str string) []utils.ID 搜索文档ID
-  - index(doc *Document, id utils.ID) 创建索引
 }
 
 class Document {
@@ -18,20 +18,9 @@ class Document {
   + Title string 标题
   + Summary string 摘要
   + Content string 内容
-  .. 以下索引是删除索引时使用的 ..
-  + TitleIndex   *Results  标题索引
-  + SummaryIndex *Results  摘要索引
-  + ContentIndex *Results  内容索引
   --
   - dbKey() []byte 文档Key
 }
-
-class Index {
-  索引
-  ..
-  - docs map[utils.ID]int 文档
-}
-
 
 interface DB {
   数据库接口

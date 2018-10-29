@@ -33,7 +33,7 @@ func Split(str string) []string {
 	return ret
 }
 
-// IsNaturalSplit 子让分割的词
+// IsNaturalSplit 自然分割的词
 func IsNaturalSplit(str string) bool {
 	return _Other.MatchString(str)
 }

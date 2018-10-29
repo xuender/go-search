@@ -2,7 +2,7 @@ package search
 
 import (
 	"errors"
-	"fmt"
+	"strings"
 
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/xuender/go-utils"
@@ -46,134 +46,48 @@ func (e *Engine) Get(key []byte) (doc *Document, err error) {
 // Put 更新文档
 func (e *Engine) Put(doc *Document) {
 	dbKey := doc.dbKey()
+	var docID utils.ID
 	if has, _ := e.db.Has(dbKey); has {
-		var oldID utils.ID
-		e.get(dbKey, &oldID)
-		old := Document{}
-		e.get(oldID[:], &old)
-		// TODO: 起新线程删除old一切记录
-		fmt.Println("删除", old)
+		e.get(dbKey, &docID)
+	} else {
+		docID = utils.NewID(_docIDPrefix)
+		e.put(dbKey, docID)
+		e.put(utils.PrefixBytes(docID[:], _docID2DocKeyPrefix, '-'), doc.Key)
 	}
-	docID := utils.NewID(_docIDPrefix)
-	e.put(dbKey, docID)
-	e.put(utils.PrefixBytes(docID[:], _docID2DocKeyPrefix, '-'), doc.Key)
-	e.index(doc, docID)
 	e.put(docID[:], doc)
-}
-
-func (e *Engine) index(doc *Document, id utils.ID) {
-	doc.index()
-	words := []string{}
-	e.get(_words, &words)
-	for _, w := range words {
-		doc.Add(w)
-	}
-
-	if doc.TitleIndex != nil {
-		for k, v := range *(doc.TitleIndex) {
-			e.putIndex(_titleIDPrefix, k, v, id)
-		}
-	}
-	if doc.SummaryIndex != nil {
-		for k, v := range *(doc.SummaryIndex) {
-			e.putIndex(_summaryIDPrefix, k, v, id)
-		}
-	}
-	if doc.ContentIndex != nil {
-		for k, v := range *(doc.ContentIndex) {
-			e.putIndex(_contentIDPrefix, k, v, id)
-		}
-	}
-}
-
-func (e *Engine) putIndex(b byte, k string, v int, id utils.ID) {
-	key := utils.PrefixBytes([]byte(k), b, '-')
-	i := e.getIndex(key)
-	i.Add(id, v)
-	e.put(key, i)
 }
 
 // searchID 搜索文档ID
 func (e *Engine) searchID(str string) []utils.ID {
-	// 生成搜索关键词
-	keyword := NewKeyword(str)
-	e.loadKeyword(keyword)
-	words := keyword.Get()
-
 	ret := []utils.ID{}
-	// 去重
-	m := map[utils.ID]bool{}
-	for _, b := range _IndexPrefixs {
-		var i Index
-		for _, k := range words {
-			key := utils.PrefixBytes([]byte(k), b, '-')
-			if i.Docs == nil {
-				i = *e.getIndex(key)
-			} else {
-				i.Intersection(*e.getIndex(key))
-			}
-		}
-		if i.Docs != nil {
-			for id := range i.Docs {
-				if has, _ := m[id]; !has {
-					ret = append(ret, id)
+	ts := []utils.ID{}
+	ss := []utils.ID{}
+	cs := []utils.ID{}
+	for _, s := range Split(str) {
+		e.db.Iterator([]byte{_docIDPrefix, '-'}, func(key, value []byte) {
+			id := utils.ID{}
+			id.ParseBytes(key)
+			doc := Document{}
+			if utils.Decode(value, &doc) == nil {
+				if doc.Title != "" && strings.Contains(doc.Title, s) {
+					ts = append(ts, id)
+					return
+				}
+				if doc.Summary != "" && strings.Contains(doc.Summary, s) {
+					ss = append(ss, id)
+					return
+				}
+				if doc.Content != "" && strings.Contains(doc.Content, s) {
+					cs = append(cs, id)
+					return
 				}
 			}
-		}
+		})
 	}
+	ret = append(ret, ts...)
+	ret = append(ret, ss...)
+	ret = append(ret, cs...)
 	return ret
-}
-
-func (e *Engine) loadKeyword(k *Keyword) {
-	// 是否有索引
-	for w := range *(k.words) {
-		for _, b := range _IndexPrefixs {
-			key := utils.PrefixBytes([]byte(w), b, '-')
-			if has, _ := e.db.Has(key); has {
-				index := e.getIndex(key)
-				k.words.AddNum(w, len(index.Docs))
-				break
-			}
-		}
-	}
-	// 未创建过索引的关键词
-	zero := []string{}
-	for k, n := range *(k.words) {
-		if n == 0 {
-			zero = append(zero, k)
-		}
-	}
-
-	// 遍历文档
-	e.db.Iterator([]byte{_docIDPrefix, '-'}, func(key, value []byte) {
-		doc := Document{}
-		if utils.Decode(value, &doc) != nil {
-			return
-		}
-		for _, b := range _IndexPrefixs {
-			for _, w := range zero {
-				if c := doc.AddByByte(w, b); c > 0 {
-					e.put(key, doc)
-					k.words.Add(w)
-					indexKey := utils.PrefixBytes([]byte(w), b, '-')
-					i := e.getIndex(indexKey)
-					id := utils.ID{}
-					id.ParseBytes(key)
-					i.Add(id, c)
-					e.put(indexKey, *i)
-				}
-			}
-		}
-	})
-}
-
-func (e *Engine) getIndex(key []byte) *Index {
-	if has, _ := e.has(key); has {
-		i := &Index{}
-		e.get(key, i)
-		return i
-	}
-	return &Index{Docs: map[utils.ID]int{}}
 }
 
 // Search 搜索文档
@@ -202,9 +116,20 @@ func (e *Engine) SearchKey(str string) [][]byte {
 }
 
 // Delete 删除文档
-func (e *Engine) Delete(docID []byte) error {
-	// TODO
-	return nil
+func (e *Engine) Delete(key []byte) error {
+	dbKey := toDBKey(key)
+	if has, _ := e.db.Has(dbKey); has {
+		docID := utils.ID{}
+		e.get(dbKey, &docID)
+		if err := e.Delete(dbKey); err != nil {
+			return err
+		}
+		if err := e.Delete(docID[:]); err != nil {
+			return nil
+		}
+		return e.Delete(utils.PrefixBytes(docID[:], _docID2DocKeyPrefix, '-'))
+	}
+	return errors.New("Not found")
 }
 
 // NewLevelEngine leveldb 搜索引擎

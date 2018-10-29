@@ -3,19 +3,12 @@ start
 :**Put** 更新文档 **doc**;
 :根据 **doc** 的 **docKey** 生成 **dbKey**;
 if (检查 **dbKey** 是否存在?) then (存在)
-  :删除文档;
+  :修改文档 **Document**;
+else (不存在)
+  :创建 **docID**;
+  :保存 **dbKey** 和 **docID** 关系;
+  :保存 **docID** 和 **docKey** 的关系;
+  :保存文档 **Document**;
 endif
-:创建 **docID**;
-:保存 **dbKey** 和 **docID** 关系;
-:保存 **docID** 和 **docKey** 的关系;
-:创建文档 **Document**;
-:生成 **docIndex**;
-fork
-  :创建标题索引;
-fork again
-  :创建摘要索引;
-fork again
-  :创建内容索引;
-end fork
 stop
 @enduml
