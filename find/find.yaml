@@ -1,0 +1,7 @@
+exclude:
+- '*.zip'
+include:
+- '*.xml'
+- '*.java'
+- '*.txt'
+- '*.ts'
