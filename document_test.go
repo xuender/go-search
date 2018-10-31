@@ -17,5 +17,5 @@ func ExampleDocument() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"key":"MTIz","title":"标题","summary":"简介","content":"内容"}
+	// {"key":"MTIz","title":"标题","summary":"简介","content":"内容","modified":"0001-01-01T00:00:00Z"}
 }

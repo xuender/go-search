@@ -1,7 +1,11 @@
 exclude:
+- a
 - '*.zip'
+- a/b
+- a.*
 include:
 - '*.xml'
-- '*.java'
-- '*.txt'
 - '*.ts'
+- '*.txt'
+- '*.go'
+- '*.java'

@@ -13,6 +13,22 @@ type Engine struct {
 	db DB // 数据库
 }
 
+// IndexNum 索引文件数
+func (e *Engine) IndexNum() int {
+	c := 0
+	e.db.IteratorKey([]byte{_docIDPrefix, '-'}, func(key []byte) {
+		c++
+	})
+	return c
+}
+
+// IndexKeys 获取索引文件Key
+func (e *Engine) IndexKeys(f func(key []byte)) int {
+	c := 0
+	e.db.IteratorKey([]byte{_dbKey2docIDPrefix, '-'}, f)
+	return c
+}
+
 // Close 关闭引擎
 func (e *Engine) Close() error {
 	return e.db.Close()

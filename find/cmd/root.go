@@ -19,7 +19,7 @@ var rootCmd = &cobra.Command{
 	Version: "v0.0.1",
 	Long:    `搜索文件内容进行匹配`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("开始")
+		fmt.Println("索引数据库:", _dbPath)
 		return nil
 	},
 }
