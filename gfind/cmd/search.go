@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -17,9 +18,10 @@ var searchCmd = &cobra.Command{
 	Long: `
   根据关键词搜索已索引的文件爱你`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("索引数据库:", _dbPath)
+		db, _ := filepath.Abs(GetString(cmd, _db))
+		fmt.Println("索引数据库:", db)
 
-		engine, _ := search.NewLevelEngine(_dbPath)
+		engine, _ := search.NewLevelEngine(db)
 		defer engine.Close()
 
 		if len(args) == 0 {
@@ -37,5 +39,5 @@ var searchCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(searchCmd)
 	flags := searchCmd.Flags()
-	flags.StringVarP(&_dbPath, _db, "d", "db", "数据库目录")
+	flags.StringP(_db, "d", "db", "数据库目录")
 }

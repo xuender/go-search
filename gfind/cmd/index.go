@@ -6,10 +6,12 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gopkg.in/h2non/filetype.v1"
 
 	search "../.."
 )
@@ -21,15 +23,15 @@ var indexCmd = &cobra.Command{
 	Long: `
   根据通配符索引文件或目录`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("索引数据库:", _dbPath)
-		engine, _ := search.NewLevelEngine(_dbPath)
+		db := GetString(cmd, _db)
+		fmt.Println("索引数据库:", db)
+		engine, _ := search.NewLevelEngine(db)
 		defer engine.Close()
 
 		include := viper.GetStringSlice("include")
 		exclude := viper.GetStringSlice("exclude")
 		files := map[string]bool{}
 		for _, indexPath := range args {
-			fmt.Println("索引:", indexPath)
 			err := filepath.Walk(indexPath, func(walkPath string, f os.FileInfo, err error) error {
 				if f == nil {
 					return err
@@ -53,8 +55,9 @@ var indexCmd = &cobra.Command{
 						}
 					}
 				}
-				if isMatch {
+				if isMatch && isTxt(walkPath) {
 					fullName, _ := filepath.Abs(walkPath)
+					fmt.Println("选中文件:", fullName)
 					key := []byte(fullName)
 					has, err := engine.Has(key)
 					if err != nil {
@@ -74,11 +77,11 @@ var indexCmd = &cobra.Command{
 				return nil
 			})
 			if err != nil {
-				fmt.Println("目录扫描错误", err.Error())
+				return err
 			}
 		}
 		for k := range files {
-			fmt.Println("索引文件:", k)
+			fmt.Println("更新索引:", k)
 			b, err := ioutil.ReadFile(k)
 			if err != nil {
 				fmt.Println(err.Error())
@@ -105,9 +108,19 @@ var indexCmd = &cobra.Command{
 	},
 }
 
+func isTxt(f string) bool {
+	t, err := filetype.MatchFile(f)
+	return err == nil && t.MIME.Type == ""
+}
+
 // 匹配
 func match(pattern, name string) bool {
 	// 目录匹配
+	for _, p := range strings.Split(name, string(os.PathSeparator)) {
+		if m, err := path.Match(pattern, p); err == nil && m {
+			return true
+		}
+	}
 	if m, err := path.Match(pattern, path.Dir(name)); err == nil && m {
 		return true
 	}
@@ -121,7 +134,7 @@ func match(pattern, name string) bool {
 func init() {
 	rootCmd.AddCommand(indexCmd)
 	flags := indexCmd.Flags()
-	flags.StringVarP(&_dbPath, _db, "d", "db", "数据库目录")
+	flags.StringP(_db, "d", "db", "数据库目录")
 	flags.BoolP("number", "n", false, "索引文件数量")
 	flags.BoolP("list", "l", false, "显示索引文件")
 }

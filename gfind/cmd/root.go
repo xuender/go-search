@@ -19,7 +19,7 @@ var rootCmd = &cobra.Command{
 	Version: "v0.0.1",
 	Long:    `搜索文件内容进行匹配`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("索引数据库:", _dbPath)
+		fmt.Println("索引数据库:")
 		return nil
 	},
 }
@@ -36,8 +36,8 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "配置文件")
-	flags := rootCmd.Flags()
-	flags.StringVarP(&_dbPath, _db, "d", "db", "数据库目录")
+	// flags := rootCmd.Flags()
+	// flags.StringVarP(&_dbPath, _db, "d", "db", "数据库目录")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -55,7 +55,7 @@ func initConfig() {
 
 		viper.AddConfigPath(home)
 		viper.AddConfigPath(".")
-		viper.SetConfigName("find")
+		viper.SetConfigName(".gfind")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
