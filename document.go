@@ -1,6 +1,7 @@
 package search
 
 import (
+	"strings"
 	"time"
 
 	"github.com/xuender/go-utils"
@@ -17,6 +18,13 @@ type Document struct {
 
 func (doc *Document) dbKey() []byte {
 	return toDBKey(doc.Key)
+}
+
+// Match 文档匹配
+func (doc *Document) Match(str string) bool {
+	return (doc.Title != "" && strings.Contains(doc.Title, str)) ||
+		(doc.Summary != "" && strings.Contains(doc.Summary, str)) ||
+		(doc.Content != "" && strings.Contains(doc.Content, str))
 }
 
 func toDBKey(key []byte) []byte {

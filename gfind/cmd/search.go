@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/labstack/gommon/color"
 	"github.com/spf13/cobra"
 
 	search "../.."
@@ -28,10 +30,15 @@ var searchCmd = &cobra.Command{
 			return errors.New("请输入搜索内容")
 		}
 		str := strings.Join(args, " ")
-		fmt.Println("搜索:", str)
-		for _, d := range engine.Search(str) {
+		color.Println("搜索:", color.Red(str))
+
+		start := time.Now()
+		docs := engine.Search(str)
+		end := time.Now()
+		for _, d := range docs {
 			fmt.Println("\t -", d.Title)
 		}
+		color.Println("运行时间:", color.Green(fmt.Sprintf("%v", end.Sub(start))))
 		return nil
 	},
 }

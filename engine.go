@@ -2,7 +2,6 @@ package search
 
 import (
 	"errors"
-	"strings"
 
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/xuender/go-utils"
@@ -75,35 +74,22 @@ func (e *Engine) Put(doc *Document) {
 
 // searchID 搜索文档ID
 func (e *Engine) searchID(str string) []utils.ID {
-	ret := []utils.ID{}
-	ts := []utils.ID{}
-	ss := []utils.ID{}
-	cs := []utils.ID{}
-	for _, s := range Split(str) {
-		e.db.Iterator([]byte{_docIDPrefix, '-'}, func(key, value []byte) {
+	ret := utils.IDS{}
+	words := Split(str)
+	e.db.Iterator([]byte{_docIDPrefix, '-'}, func(key, value []byte) {
+		doc := Document{}
+		if utils.Decode(value, &doc) == nil {
 			id := utils.ID{}
 			id.ParseBytes(key)
-			doc := Document{}
-			if utils.Decode(value, &doc) == nil {
-				if doc.Title != "" && strings.Contains(doc.Title, s) {
-					ts = append(ts, id)
-					return
-				}
-				if doc.Summary != "" && strings.Contains(doc.Summary, s) {
-					ss = append(ss, id)
-					return
-				}
-				if doc.Content != "" && strings.Contains(doc.Content, s) {
-					cs = append(cs, id)
+			for _, s := range words {
+				if !doc.Match(s) {
 					return
 				}
 			}
-		})
-	}
-	ret = append(ret, ts...)
-	ret = append(ret, ss...)
-	ret = append(ret, cs...)
-	return ret
+			ret.Add(id)
+		}
+	})
+	return ret.Distinct()
 }
 
 // Search 搜索文档
