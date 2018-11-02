@@ -1,6 +1,6 @@
 package search
 
-import utils "github.com/xuender/go-utils"
+import "github.com/xuender/go-utils"
 
 // Word 词索引
 type Word []Posting

@@ -56,7 +56,7 @@ func Group(str string) []string {
 	return ret
 }
 
-// Position 所有位置
+// Position str 在 text 中所有位置
 func Position(text, str string) []int {
 	ret := []int{}
 	for i, f := strings.Index(text, str), 0; i > -1; i = strings.Index(text[f:], str) {

@@ -65,11 +65,13 @@ func (e *Engine) Put(doc *Document) {
 	if has, _ := e.db.Has(dbKey); has {
 		e.get(dbKey, &docID)
 	} else {
+		// 创建文档
 		docID = utils.NewID(_docIDPrefix)
 		e.put(dbKey, docID)
 		e.put(utils.PrefixBytes(docID[:], _docID2DocKeyPrefix, '-'), doc.Key)
 	}
 	e.put(docID[:], doc)
+	// TODO: 使用已存在的关键字对文档进行索引
 }
 
 // searchID 搜索文档ID
