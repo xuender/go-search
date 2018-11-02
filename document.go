@@ -27,6 +27,27 @@ func (doc *Document) Match(str string) bool {
 		(doc.Content != "" && strings.Contains(doc.Content, str))
 }
 
+// Inverted 生成到排索引
+func (doc *Document) Inverted(str string) (bool, []int) {
+	tp := Position(doc.Title, str)
+	sp := Position(doc.Summary, str)
+	cp := Position(doc.Content, str)
+	if len(tp) == 0 && len(sp) == 0 && len(cp) == 0 {
+		return false, nil
+	}
+	tl := len(doc.Title)
+	for i, v := range sp {
+		sp[i] = v + tl
+	}
+	sl := len(doc.Summary)
+	for i, v := range cp {
+		cp[i] = v + tl + sl
+	}
+	tp = append(tp, sp...)
+	tp = append(tp, cp...)
+	return true, tp
+}
+
 func toDBKey(key []byte) []byte {
 	return utils.PrefixBytes(key, _dbKey2docIDPrefix, '-')
 }

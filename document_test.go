@@ -19,3 +19,17 @@ func ExampleDocument() {
 	// Output:
 	// {"key":"MTIz","title":"标题","summary":"简介","content":"内容","modified":"0001-01-01T00:00:00Z"}
 }
+
+func ExampleDocument_Inverted() {
+	doc := Document{
+		Key:     []byte("123"),
+		Title:   "abca",
+		Summary: "",
+		Content: "cca",
+	}
+
+	fmt.Println(doc.Inverted("a"))
+
+	// Output:
+	// true [0 3 6]
+}

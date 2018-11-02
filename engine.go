@@ -74,22 +74,62 @@ func (e *Engine) Put(doc *Document) {
 
 // searchID 搜索文档ID
 func (e *Engine) searchID(str string) []utils.ID {
-	ret := utils.IDS{}
-	words := Split(str)
+	ret := utils.IDS{}          // 返回值
+	index := map[string]*Word{} // 需要创建的索引
+	hit := false                // 命中过
+
+	for _, w := range Split(str) {
+		ids := utils.IDS{}
+		word := Word{}
+		if e.get(utils.PrefixBytes([]byte(w), _wordIDPrefix, '-'), &word) == nil {
+			// fmt.Println("命中", w, word)
+			for _, w := range word {
+				ids.Add(w.DocID)
+			}
+			if hit {
+				ret.Intersect(ids.Distinct()...)
+			} else {
+				ret.Add(ids.Distinct()...)
+				hit = true
+			}
+		} else {
+			index[w] = &word
+		}
+	}
+
+	if len(index) == 0 || (len(ret) == 0 && hit) {
+		return ret
+	}
+
+	ids := utils.IDS{} // 没有索引查找的DocID
 	e.db.Iterator([]byte{_docIDPrefix, '-'}, func(key, value []byte) {
 		doc := Document{}
 		if utils.Decode(value, &doc) == nil {
 			id := utils.ID{}
 			id.ParseBytes(key)
-			for _, s := range words {
-				if !doc.Match(s) {
-					return
+			for w, word := range index {
+				if !word.Has(id) {
+					if has, pos := doc.Inverted(w); has {
+						p := Posting{
+							DocID: id,
+							Pos:   pos,
+						}
+						word.Add(p)
+						// fmt.Println(word)
+						e.put(utils.PrefixBytes([]byte(w), _wordIDPrefix, '-'), word)
+					} else {
+						return
+					}
 				}
 			}
-			ret.Add(id)
+			ids.Add(id)
 		}
 	})
-	return ret.Distinct()
+	if hit {
+		ret.Intersect(ids.Distinct()...)
+		return ret.Distinct()
+	}
+	return ids
 }
 
 // Search 搜索文档

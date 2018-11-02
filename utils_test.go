@@ -17,3 +17,10 @@ func ExampleGroup() {
 	// Output:
 	// [太阳 太阳当 太阳当空 太阳当空照 阳当 阳当空 阳当空照 当空 当空照 空照]
 }
+
+func ExamplePosition() {
+	fmt.Println(Position("abc cba aac", "a"))
+
+	// Output:
+	// [0 6 8 9]
+}

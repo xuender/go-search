@@ -55,3 +55,14 @@ func Group(str string) []string {
 	}
 	return ret
 }
+
+// Position 所有位置
+func Position(text, str string) []int {
+	ret := []int{}
+	for i, f := strings.Index(text, str), 0; i > -1; i = strings.Index(text[f:], str) {
+		f += i
+		ret = append(ret, f)
+		f++
+	}
+	return ret
+}
